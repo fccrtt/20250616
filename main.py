@@ -1,26 +1,51 @@
 import streamlit as st
+import pandas as pd
+import os
 
-# 미리 정의된 혈액형 데이터 (실제 서비스라면 데이터베이스를 사용할 수 있음)
-blood_data = {
-    "김민수": "A형",
-    "이서준": "B형",
-    "박지민": "O형",
-    "최예린": "AB형",
-    "정하늘": "A형",
-}
+# CSV 파일 경로
+DATA_FILE = "blood_data.csv"
 
-st.title("응급 혈액형 조회 시스템 🩸")
-st.write("이름을 입력하면 등록된 혈액형 정보를 확인할 수 있습니다.")
+# CSV 파일이 없으면 생성
+if not os.path.exists(DATA_FILE):
+    df = pd.DataFrame(columns=["name", "blood_type"])
+    df.to_csv(DATA_FILE, index=False)
 
-# 사용자 입력 받기
-name = st.text_input("이름을 입력하세요")
+# CSV에서 데이터 로드
+def load_data():
+    return pd.read_csv(DATA_FILE)
 
-# 조회 버튼
-if st.button("혈액형 조회"):
-    if name in blood_data:
-        st.success(f"{name}님의 혈액형은 **{blood_data[name]}** 입니다.")
-    else:
-        st.error("해당 이름의 혈액형 정보가 등록되어 있지 않습니다.")
+# CSV에 데이터 저장
+def save_data(name, blood_type):
+    df = load_data()
+    new_entry = pd.DataFrame([[name, blood_type]], columns=["name", "blood_type"])
+    df = pd.concat([df, new_entry], ignore_index=True)
+    df.to_csv(DATA_FILE, index=False)
 
-st.markdown("---")
-st.caption("⚠️ 이 정보는 응급 상황에서 참고용으로 사용되며, 정확한 혈액형 확인은 병원 기록을 기준으로 해야 합니다.")
+# 앱 제목
+st.title("응급 혈액형 조회 및 등록 시스템 🩸")
+
+# 메뉴 선택
+menu = st.sidebar.selectbox("메뉴 선택", ["혈액형 조회", "혈액형 등록"])
+
+if menu == "혈액형 조회":
+    st.header("🔍 혈액형 조회")
+    name = st.text_input("이름을 입력하세요")
+    if st.button("조회"):
+        df = load_data()
+        person = df[df["name"] == name]
+        if not person.empty:
+            blood = person.iloc[0]["blood_type"]
+            st.success(f"{name}님의 혈액형은 **{blood}형**입니다.")
+        else:
+            st.error("해당 이름의 혈액형 정보가 없습니다.")
+
+elif menu == "혈액형 등록":
+    st.header("✍️ 혈액형 등록")
+    name = st.text_input("이름")
+    blood_type = st.selectbox("혈액형", ["A", "B", "O", "AB"])
+    if st.button("등록"):
+        if name.strip() == "":
+            st.warning("이름을 입력해주세요.")
+        else:
+            save_data(name.strip(), blood_type)
+            st.success(f"{name}님의 혈액형이 {blood_type}형으로 등록되었습니다.")
