@@ -1,51 +1,30 @@
 import streamlit as st
 import pandas as pd
-import os
 
-# CSV 파일 경로
-DATA_FILE = "blood_data.csv"
+# 모의 데이터 (병원명, 주소, 응급실 대기 시간(분), 혼잡도)
+hospital_data = [
+    {"name": "서울아산병원", "address": "서울 송파구", "wait_time": 25, "congestion": "중간"},
+    {"name": "세브란스병원", "address": "서울 서대문구", "wait_time": 40, "congestion": "높음"},
+    {"name": "삼성서울병원", "address": "서울 강남구", "wait_time": 15, "congestion": "낮음"},
+    {"name": "서울대병원", "address": "서울 종로구", "wait_time": 30, "congestion": "중간"},
+    {"name": "강남성심병원", "address": "서울 강남구", "wait_time": 50, "congestion": "높음"},
+]
 
-# CSV 파일이 없으면 생성
-if not os.path.exists(DATA_FILE):
-    df = pd.DataFrame(columns=["name", "blood_type"])
-    df.to_csv(DATA_FILE, index=False)
+df = pd.DataFrame(hospital_data)
 
-# CSV에서 데이터 로드
-def load_data():
-    return pd.read_csv(DATA_FILE)
+st.title("응급실 대기 시간 및 병원 혼잡도 조회 🏥")
 
-# CSV에 데이터 저장
-def save_data(name, blood_type):
-    df = load_data()
-    new_entry = pd.DataFrame([[name, blood_type]], columns=["name", "blood_type"])
-    df = pd.concat([df, new_entry], ignore_index=True)
-    df.to_csv(DATA_FILE, index=False)
+# 사용자 위치 선택 (서울시 구 이름)
+gu_list = df['address'].unique()
+selected_gu = st.selectbox("지역을 선택하세요", options=gu_list)
 
-# 앱 제목
-st.title("응급 혈액형 조회 및 등록 시스템 🩸")
+# 선택한 지역 병원 리스트 필터링
+filtered_df = df[df['address'] == selected_gu]
 
-# 메뉴 선택
-menu = st.sidebar.selectbox("메뉴 선택", ["혈액형 조회", "혈액형 등록"])
+st.subheader(f"{selected_gu} 지역 병원 리스트")
 
-if menu == "혈액형 조회":
-    st.header("🔍 혈액형 조회")
-    name = st.text_input("이름을 입력하세요")
-    if st.button("조회"):
-        df = load_data()
-        person = df[df["name"] == name]
-        if not person.empty:
-            blood = person.iloc[0]["blood_type"]
-            st.success(f"{name}님의 혈액형은 **{blood}형**입니다.")
-        else:
-            st.error("해당 이름의 혈액형 정보가 없습니다.")
+# 병원명 선택
+hospital_names = filtered_df['name'].tolist()
+selected_hospital = st.selectbox("병원을 선택하세요", options=hospital_names)
 
-elif menu == "혈액형 등록":
-    st.header("✍️ 혈액형 등록")
-    name = st.text_input("이름")
-    blood_type = st.selectbox("혈액형", ["A", "B", "O", "AB"])
-    if st.button("등록"):
-        if name.strip() == "":
-            st.warning("이름을 입력해주세요.")
-        else:
-            save_data(name.strip(), blood_type)
-            st.success(f"{name}님의 혈액형이 {blood_type}형으로 등록되었습니다.")
+if s
